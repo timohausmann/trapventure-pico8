@@ -14,11 +14,19 @@ entity = class:new({
         
         -- real dt janky AF
         local dt = 1
+        local lastX = self.x
+        local lastY = self.y
         
         local limitedVx, limitedVy = self:limitSpeed(self.vx, self.vy, 1)
         
         self.x = self.x + limitedVx * self.speed * dt
         self.y = self.y + limitedVy * self.speed * dt
+
+        if self:collide() then
+            self.x = lastX
+            self.y = lastY
+        end
+
         self.flipx = self.vx < 0
         
         -- determine animation
@@ -52,5 +60,21 @@ entity = class:new({
         else
             return x, y
         end
+    end,
+
+    collide = function(self)
+        local x1 = flr((self.x + 2) / 8) -- reduce x hitbox by 2 on each side
+        local y1 = flr(self.y / 8)
+        local x2 = flr((self.x + 5) / 8)
+        local y2 = flr((self.y + 7) / 8)
+
+        print(x1)
+
+        local a = fget(mget(x1, y1), 0)
+        local b = fget(mget(x2, y1), 0)
+        local c = fget(mget(x2, y2), 0)
+        local d = fget(mget(x1, y2), 0)
+
+        return a or b or c or d
     end
 })

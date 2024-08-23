@@ -3,47 +3,62 @@ function _init()
     lastT = 0
     scenes={}
     entities={}
-    player=entity:new({
-        x=4*8,
-        y=8*8,
-        sp=64,
-        anim={
-            idle={64,65},
-            movex={66,67},
-            movey={68,69},
-        }
-    })
+    traps={}
+    player=nil
 
-    add(entities, player)
-
-    controls.init()
-
+    sprites = {
+        player = 64,
+        enemy = 80,
+        mouse = 96,
+        torch = 21,
+        trapClosed = 12,
+        trapOpen = 28,
+    }
+    
     -- scan the current map for special sprites
-    -- 64 = player
-    -- 80 = enemy
-    -- 96 = mouse
-    -- 21 = torch
-    -- 12 = trap (blocked)
-    -- 28 = trap (open)
     for x=0,15 do
         for y=0,15 do
             local mval = mget(x,y)
-            if mval == 21 then
-                
+            -- traps
+            if mval == sprites.trapOpen or mval == sprites.trapClosed then
+                local t = trap:new({
+                    x = x * 8,
+                    y = y * 8,
+                    open = mval == sprites.trapOpen,
+                });
+                add(traps, t)
+
+            -- torches
+            elseif mval == sprites.torch then
                 local torch = entity:new({
-                    x= x * 8,
-                    y= y * 8,
-                    sp=21,
-                    anim={
+                    x = x * 8,
+                    y = y * 8,
+                    sp = sprites.torch,
+                    anim = {
                         idle={21,22}
                     }
                 })
                 add(entities, torch)
-                
+
+            -- player
+            elseif mval == sprites.player then
+                player = entity:new({
+                    x = x * 8,
+                    y = y * 8,
+                    sp = sprites.player,
+                    anim={
+                        idle={64,65},
+                        movex={66,67},
+                        movey={68,69},
+                    }
+                })
+                mset(x, y, 0) -- erase spawn tile
             end
-            -- printh(mval, 'debug.txt')
         end
     end
+
+    -- make sure player is highest draw
+    add(entities, player)
 end
 
 function _update()
