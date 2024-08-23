@@ -9,11 +9,19 @@ entity = class:new({
     animSpeed = 0.25,
     animCurr = nil,
     flipx = false,
+    dead = false,
 
     update = function(self, dt)
-        
-        -- real dt janky AF
-        local dt = 1
+        dt = 1 -- real dt janky AF
+
+        if self.dead then
+            self.vy *= 0.99;
+            self.vy += 0.5;
+
+			self.x += self.vx;
+			self.y += self.vy;
+        end
+
         local lastX = self.x
         local lastY = self.y
         
@@ -22,16 +30,31 @@ entity = class:new({
         self.x = self.x + limitedVx * self.speed * dt
         self.y = self.y + limitedVy * self.speed * dt
 
-        if self:collide() then
-            self.x = lastX
-            self.y = lastY
+        if not self.dead then
+            -- obstacles collision
+            if self:collide(0) then
+                self.x = lastX
+                self.y = lastY
+            end
+
+            -- trap collision
+            if self:collide(1) then
+                self:die()
+            end
+
+            -- stairs collision
+            if self:collide(2) and not fading then
+                nextMap()
+            end
         end
 
         self.flipx = self.vx < 0
         
         -- determine animation
         self.animCurr = nil
-        if self.vx ~= 0 and self.anim.movex ~= nil then 
+        if self.dead then
+            self.animCurr = self.anim.death
+        elseif self.vx ~= 0 and self.anim.movex ~= nil then 
             self.animCurr = self.anim.movex
         elseif self.vy ~= 0 and self.anim.movey ~= nil then
             self.animCurr = self.anim.movey
@@ -62,19 +85,25 @@ entity = class:new({
         end
     end,
 
-    collide = function(self)
-        local x1 = flr((self.x + 2) / 8) -- reduce x hitbox by 2 on each side
-        local y1 = flr(self.y / 8)
-        local x2 = flr((self.x + 5) / 8)
-        local y2 = flr((self.y + 7) / 8)
+    collide = function(self, flag)
 
-        print(x1)
+        local mapX, mapY = getMapOffset()
+        
+        local x1 = mapX + flr((self.x + 2) / 8) -- reduce x hitbox by 2 on each side
+        local y1 = mapY + flr(self.y / 8)
+        local x2 = mapX + flr((self.x + 5) / 8)
+        local y2 = mapY + flr((self.y + 7) / 8)
 
-        local a = fget(mget(x1, y1), 0)
-        local b = fget(mget(x2, y1), 0)
-        local c = fget(mget(x2, y2), 0)
-        local d = fget(mget(x1, y2), 0)
+        local a = fget(mget(x1, y1), flag)
+        local b = fget(mget(x2, y1), flag)
+        local c = fget(mget(x2, y2), flag)
+        local d = fget(mget(x1, y2), flag)
 
         return a or b or c or d
+    end,
+
+    die = function(self)
+        self.dead = true
+        self.vy = -6
     end
 })

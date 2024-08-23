@@ -6,10 +6,13 @@ controls={
     update=function(player)
         
         if(player == nil) return
-
+        if(player.dead) return
+        
         player.vx = 0
         player.vy = 0
         
+        if(fading) return
+
         if btn(➡️) then
             player.vx = 1
         elseif btn(⬅️) then
